@@ -1,11 +1,7 @@
 # StrGNN
 
-## Introduction
+The `StrGNN` repository contains code for an end-to-end structural temporal Graph Neural Network model for detecting anomalous edges in dynamic graphs. The method implemented here is described in [this paper](https://dl.acm.org/doi/pdf/10.1145/3459637.3481955).
 
-Typically, there are two ways to model dynamic systems as dynamic graphs, namely, accumulated graph and time-evolving graph. 
-The accumulated graph %automatically and incrementally constructs an entire graph using all vertices and edges until the current timestamp. 
-In contrast, the time-evolving graph is constructed using vertices and edges only appearing in the current timestamp. 
-Therefore, each snapshot represents the graph state at a single instant of time.
 
 ## Installation
 
@@ -15,9 +11,9 @@ Go to detection folder and install required packages
 bash install.sh
 ```
 
-## Dataset Processing
+## Dataset Preprocessing
 
-Please follow the example format in data folder to process data
+Please follow the example format in data folder to preprocess data:
 
 * acc_email.npy is the graph input with shape (T, N, N), where T is the number of snapshot and N is the number of nodes in the graph
 
@@ -51,6 +47,7 @@ python Main_statistic.py --graph=sta_email.npy --split=email0.01_sta
 
 
 ## Citation
+
 If you find the code in this respository useful for your research, please cite our paper:
 ```
 @inproceedings{cai2021structural,
@@ -72,7 +69,12 @@ https://github.com/muhanzhang/SEAL
 
 https://github.com/muhanzhang/pytorch_DGCNN
 
+## Other information
+
+- Accumulated Graph and Time-evolving Graph:
+
+   Typically, there are two ways to model dynamic systems as dynamic graphs, namely, accumulated graph and time-evolving graph. The accumulated graph automatically and incrementally constructs an entire graph using all vertices and edges until the current timestamp. In contrast, the time-evolving graph is constructed using vertices and edges only appearing in the current timestamp. Therefore, each snapshot represents the graph state at a single instant of time.
+
 ## CopyRights
-This code can only be used for research purpose, and can not be distributed without the authors' permission.
 
-
+This technology is protected by patents, thus the code can only be used for research purpose. 

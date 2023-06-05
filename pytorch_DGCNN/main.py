@@ -18,32 +18,44 @@ from util import cmd_args, load_data
 from sklearn.metrics import average_precision_score
 from sklearn.metrics import precision_recall_curve
 
+
 class Classifier(nn.Module):
     def __init__(self, regression=False):
         super(Classifier, self).__init__()
         self.regression = regression
-        if cmd_args.gm == 'DGCNN':
+        if cmd_args.gm == "DGCNN":
             model = DGCNN
         else:
-            print(('unknown gm %s' % cmd_args.gm))
+            print(("unknown gm %s" % cmd_args.gm))
             sys.exit()
 
-        if cmd_args.gm == 'DGCNN':
-            self.gnn = model(latent_dim=cmd_args.latent_dim,
-                            output_dim=cmd_args.out_dim,
-                            num_node_feats=cmd_args.feat_dim+cmd_args.attr_dim,
-                            num_edge_feats=cmd_args.edge_feat_dim,
-                            k=cmd_args.sortpooling_k, 
-                            conv1d_activation=cmd_args.conv1d_activation)
+        if cmd_args.gm == "DGCNN":
+            self.gnn = model(
+                latent_dim=cmd_args.latent_dim,
+                output_dim=cmd_args.out_dim,
+                num_node_feats=cmd_args.feat_dim + cmd_args.attr_dim,
+                num_edge_feats=cmd_args.edge_feat_dim,
+                k=cmd_args.sortpooling_k,
+                conv1d_activation=cmd_args.conv1d_activation,
+            )
         out_dim = cmd_args.out_dim
         if out_dim == 0:
-            if cmd_args.gm == 'DGCNN':
+            if cmd_args.gm == "DGCNN":
                 out_dim = self.gnn.dense_dim
             else:
                 out_dim = cmd_args.latent_dim
-        self.mlp = MLPClassifier(input_size=out_dim, hidden_size=cmd_args.hidden, num_class=cmd_args.num_class, with_dropout=cmd_args.dropout)
+        self.mlp = MLPClassifier(
+            input_size=out_dim,
+            hidden_size=cmd_args.hidden,
+            num_class=cmd_args.num_class,
+            with_dropout=cmd_args.dropout,
+        )
         if regression:
-            self.mlp = MLPRegression(input_size=out_dim, hidden_size=cmd_args.hidden, with_dropout=cmd_args.dropout)
+            self.mlp = MLPRegression(
+                input_size=out_dim,
+                hidden_size=cmd_args.hidden,
+                with_dropout=cmd_args.dropout,
+            )
 
     def PrepareFeatureLabel(self, batch_graph):
         if self.regression:
@@ -76,11 +88,17 @@ class Classifier(nn.Module):
             if node_tag_flag == True:
                 concat_tag += batch_graph[i].node_tags
             if node_feat_flag == True:
-                tmp = torch.from_numpy(batch_graph[i].node_features).type('torch.FloatTensor')
+                tmp = torch.from_numpy(batch_graph[i].node_features).type(
+                    "torch.FloatTensor"
+                )
                 concat_feat.append(tmp)
             if edge_feat_flag == True:
-                if batch_graph[i].edge_features is not None:  # in case no edge in graph[i]
-                    tmp = torch.from_numpy(batch_graph[i].edge_features).type('torch.FloatTensor')
+                if (
+                    batch_graph[i].edge_features is not None
+                ):  # in case no edge in graph[i]
+                    tmp = torch.from_numpy(batch_graph[i].edge_features).type(
+                        "torch.FloatTensor"
+                    )
                     concat_edge_feat.append(tmp)
 
         if node_tag_flag == True:
@@ -100,11 +118,11 @@ class Classifier(nn.Module):
             pass
         else:
             node_feat = torch.ones(n_nodes, 1)  # use all-one vector as node features
-        
+
         if edge_feat_flag == True:
             edge_feat = torch.cat(concat_edge_feat, 0)
 
-        if cmd_args.mode == 'gpu':
+        if cmd_args.mode == "gpu":
             node_feat = node_feat.cuda()
             labels = labels.cuda()
             if edge_feat_flag == True:
@@ -125,8 +143,11 @@ class Classifier(nn.Module):
         elif len(feature_label) == 3:
             node_feat, edge_feat, labels = feature_label
         embed = self.gnn(batch, node_feat, edge_feat)
-        labels = [labels[i] for i in range(0,labels.shape[0],5)]
-        labels = torch.LongTensor(labels).cuda()
+        labels = [labels[i] for i in range(0, labels.shape[0], 5)]
+
+        labels = torch.LongTensor(labels)
+        if cmd_args.mode == "gpu":
+            labels = torch.LongTensor(labels).cuda()
         return self.mlp(embed, labels)
 
     def output_features(self, batch_graph):
@@ -138,12 +159,19 @@ class Classifier(nn.Module):
             node_feat, edge_feat, labels = feature_label
         embed = self.gnn(batch_graph, node_feat, edge_feat)
         return embed, labels
-        
 
-def loop_dataset(g_list, classifier, sample_idxes, optimizer=None, bsize=cmd_args.batch_size):
+
+def loop_dataset(
+    g_list,
+    classifier,
+    sample_idxes,
+    optimizer=None,
+    bsize=cmd_args.batch_size,
+    mode=cmd_args.mode,
+):
     total_loss = []
     total_iters = (len(sample_idxes) + (bsize - 1) * (optimizer is None)) // bsize
-    pbar = tqdm(list(range(total_iters)), unit='batch')
+    pbar = tqdm(list(range(total_iters)), unit="batch")
     all_targets = []
     all_scores = []
 
@@ -168,12 +196,11 @@ def loop_dataset(g_list, classifier, sample_idxes, optimizer=None, bsize=cmd_arg
 
         loss = loss.data.cpu().detach().numpy()
         if classifier.regression:
-            pbar.set_description('MSE_loss: %0.5f MAE_loss: %0.5f' % (loss, mae) )
-            total_loss.append( np.array([loss, mae]) * len(selected_idx))
+            pbar.set_description("MSE_loss: %0.5f MAE_loss: %0.5f" % (loss, mae))
+            total_loss.append(np.array([loss, mae]) * len(selected_idx))
         else:
-            pbar.set_description('loss: %0.5f acc: %0.5f' % (loss, acc) )
-            total_loss.append( np.array([loss, acc]) * len(selected_idx))
-
+            pbar.set_description("loss: %0.5f acc: %0.5f" % (loss, acc))
+            total_loss.append(np.array([loss, acc]) * len(selected_idx))
 
         n_samples += len(selected_idx)
     if optimizer is None:
@@ -181,9 +208,9 @@ def loop_dataset(g_list, classifier, sample_idxes, optimizer=None, bsize=cmd_arg
     total_loss = np.array(total_loss)
     avg_loss = np.sum(total_loss, 0) / n_samples
     all_scores = torch.cat(all_scores).cpu().numpy()
-    
+
     # np.savetxt('test_scores.txt', all_scores)  # output test predictions
-    
+
     if not classifier.regression:
         all_targets = np.array(all_targets)
         fpr, tpr, _ = metrics.roc_curve(all_targets, all_scores, pos_label=1)
@@ -195,23 +222,25 @@ def loop_dataset(g_list, classifier, sample_idxes, optimizer=None, bsize=cmd_arg
     return avg_loss
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(cmd_args)
     random.seed(cmd_args.seed)
     np.random.seed(cmd_args.seed)
     torch.manual_seed(cmd_args.seed)
 
     train_graphs, test_graphs = load_data()
-    print(('# train: %d, # test: %d' % (len(train_graphs), len(test_graphs))))
+    print(("# train: %d, # test: %d" % (len(train_graphs), len(test_graphs))))
 
     if cmd_args.sortpooling_k <= 1:
         num_nodes_list = sorted([g.num_nodes for g in train_graphs + test_graphs])
-        cmd_args.sortpooling_k = num_nodes_list[int(math.ceil(cmd_args.sortpooling_k * len(num_nodes_list))) - 1]
+        cmd_args.sortpooling_k = num_nodes_list[
+            int(math.ceil(cmd_args.sortpooling_k * len(num_nodes_list))) - 1
+        ]
         cmd_args.sortpooling_k = max(10, cmd_args.sortpooling_k)
-        print(('k used in SortPooling is: ' + str(cmd_args.sortpooling_k)))
+        print(("k used in SortPooling is: " + str(cmd_args.sortpooling_k)))
 
     classifier = Classifier()
-    if cmd_args.mode == 'gpu':
+    if cmd_args.mode == "gpu":
         classifier = classifier.cuda()
 
     optimizer = optim.Adam(classifier.parameters(), lr=cmd_args.learning_rate)
@@ -221,28 +250,48 @@ if __name__ == '__main__':
     for epoch in range(cmd_args.num_epochs):
         random.shuffle(train_idxes)
         classifier.train()
-        avg_loss = loop_dataset(train_graphs, classifier, train_idxes, optimizer=optimizer)
+        avg_loss = loop_dataset(
+            train_graphs, classifier, train_idxes, optimizer=optimizer
+        )
         if not cmd_args.printAUC:
             avg_loss[2] = 0.0
-        print(('\033[92maverage training of epoch %d: loss %.5f acc %.5f auc %.5f\033[0m' % (epoch, avg_loss[0], avg_loss[1], avg_loss[2])))
+        print(
+            (
+                "\033[92maverage training of epoch %d: loss %.5f acc %.5f auc %.5f\033[0m"
+                % (epoch, avg_loss[0], avg_loss[1], avg_loss[2])
+            )
+        )
 
         classifier.eval()
         test_loss = loop_dataset(test_graphs, classifier, list(range(len(test_graphs))))
         if not cmd_args.printAUC:
             test_loss[2] = 0.0
-        print(('\033[93maverage test of epoch %d: loss %.5f acc %.5f auc %.5f\033[0m' % (epoch, test_loss[0], test_loss[1], test_loss[2])))
+        print(
+            (
+                "\033[93maverage test of epoch %d: loss %.5f acc %.5f auc %.5f\033[0m"
+                % (epoch, test_loss[0], test_loss[1], test_loss[2])
+            )
+        )
 
-    with open('acc_results.txt', 'a+') as f:
-        f.write(str(test_loss[1]) + '\n')
+    with open("acc_results.txt", "a+") as f:
+        f.write(str(test_loss[1]) + "\n")
 
     if cmd_args.printAUC:
-        with open('auc_results.txt', 'a+') as f:
-            f.write(str(test_loss[2]) + '\n')
+        with open("auc_results.txt", "a+") as f:
+            f.write(str(test_loss[2]) + "\n")
 
     if cmd_args.extract_features:
         features, labels = classifier.output_features(train_graphs)
-        labels = labels.type('torch.FloatTensor')
-        np.savetxt('extracted_features_train.txt', torch.cat([labels.unsqueeze(1), features.cpu()], dim=1).detach().numpy(), '%.4f')
+        labels = labels.type("torch.FloatTensor")
+        np.savetxt(
+            "extracted_features_train.txt",
+            torch.cat([labels.unsqueeze(1), features.cpu()], dim=1).detach().numpy(),
+            "%.4f",
+        )
         features, labels = classifier.output_features(test_graphs)
-        labels = labels.type('torch.FloatTensor')
-        np.savetxt('extracted_features_test.txt', torch.cat([labels.unsqueeze(1), features.cpu()], dim=1).detach().numpy(), '%.4f')
+        labels = labels.type("torch.FloatTensor")
+        np.savetxt(
+            "extracted_features_test.txt",
+            torch.cat([labels.unsqueeze(1), features.cpu()], dim=1).detach().numpy(),
+            "%.4f",
+        )

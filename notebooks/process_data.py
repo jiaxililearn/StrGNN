@@ -117,7 +117,6 @@ def sample_neg(net, pos):
         row, col = _net.nonzero()
 
         num_edges = row.shape[0]
-        print(f"Sampling {num_edges} negative edges ..")
 
         net_copy = ssp.lil_matrix(_net).copy()
 

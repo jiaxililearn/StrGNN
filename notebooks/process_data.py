@@ -3,7 +3,6 @@ import numpy as np
 import scipy.sparse as ssp
 from tqdm import tqdm
 import random
-from tempfile import TemporaryFile
 
 # # DGraph Preprocessing
 
@@ -45,7 +44,7 @@ test_mask shape: {test_mask.shape}
 
 # %%
 def reindex_graph_dataset(
-    edge_index, node_feature, node_label, edge_type, edge_timestamp, mask
+    edge_index, node_feature, node_label, edge_type, edge_timestamp, mask, name
 ):
     masked_edge_index = edge_index[mask]
     masked_edge_type = edge_type[mask]
@@ -99,6 +98,23 @@ def reindex_graph_dataset(
           """
     )
 
+    print(f"Save {name} Net ..")
+    np.save(f"./dgraph_{name}_net.npy", net)
+
+    print("Sample Negatives ..")
+    train_neg = sample_neg(net, reindex_edge_index)
+    print("Save Train Data ..")
+    np.savez(
+        f"./dgraph_{name}.npz",
+        train_pos=reindex_edge_index,
+        train_pos_id=masked_edge_timestamp,
+        train_neg=train_neg,
+        train_neg_id=masked_edge_timestamp,
+        train_node_label=masked_node_label,
+        train_node_feature=masked_node_feature,
+    )
+    print(f"Complete Processing {name}!")
+
     return (
         reindex_edge_index,
         masked_node_feature,
@@ -141,7 +157,7 @@ def sample_neg(net, pos):
     return np.concatenate(negs, axis=1)
 
 
-# %%
+""" Save Train Data """
 (
     train_edge_index,  # train_pos
     train_node_feature,
@@ -150,20 +166,12 @@ def sample_neg(net, pos):
     train_edge_timestamp,  # train_pos_id
     train_net,
     train_node2id,
-) = reindex_graph_dataset(edge_index, X, y, edge_type, edge_timestamp, train_mask)
-
-train_neg = sample_neg(train_net, train_edge_index)
-
-# outfile = TemporaryFile()
-np.savez(
-    "./dgraph_train.npz",
-    train_pos=train_edge_index,
-    train_pos_id=train_edge_timestamp,
-    train_neg=train_neg,
-    train_neg_id=train_edge_timestamp,
+) = reindex_graph_dataset(
+    edge_index, X, y, edge_type, edge_timestamp, train_mask, "train"
 )
-print("Train .npz Saved!")
 
+
+""" Save Valid Data """
 (
     valid_edge_index,  # valid_pos
     valid_node_feature,
@@ -172,15 +180,19 @@ print("Train .npz Saved!")
     valid_edge_timestamp,  # valid_pos_id
     valid_net,
     valid_node2id,
-) = reindex_graph_dataset(edge_index, X, y, edge_type, edge_timestamp, valid_mask)
-
-valid_neg = sample_neg(valid_net, valid_edge_index)
-np.savez(
-    "./dgraph_valid.npz",
-    valid_pos=valid_edge_index,
-    valid_pos_id=valid_edge_timestamp,
-    valid_neg=valid_neg,
-    valid_neg_id=valid_edge_timestamp,
+) = reindex_graph_dataset(
+    edge_index, X, y, edge_type, edge_timestamp, valid_mask, "valid"
 )
 
-print("Valid .npz Saved!")
+""" Save Test Data """
+(
+    test_edge_index,  # test_pos
+    test_node_feature,
+    test_node_label,
+    test_edge_type,
+    test_edge_timestamp,  # test_pos_id
+    test_net,
+    test_node2id,
+) = reindex_graph_dataset(
+    edge_index, X, y, edge_type, edge_timestamp, test_mask, "test"
+)

@@ -158,7 +158,7 @@ def sample_neg(net, pos):
         # print(f'Timestamp {ts}')
         negs.append(sample_neg_ts(net[ts], pos))
 
-    return np.concatenate(negs, axis=1)
+    return np.concatenate(negs, axis=0)
 
 
 """ Save Train Data """

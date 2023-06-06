@@ -3,3 +3,4 @@ pytorch_DGCNN/lib/build/*
 pytorch_DGCNN/__pycache__/*
 pytorch_DGCNN/lib/__pycache__/*
 detection/__pycache__/*
+notebooks/*.npz

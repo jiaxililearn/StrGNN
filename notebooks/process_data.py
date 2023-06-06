@@ -109,20 +109,6 @@ def reindex_graph_dataset(
     )
 
 
-# %%
-(
-    train_edge_index,  # train_pos
-    train_node_feature,
-    train_node_label,
-    train_edge_type,
-    train_edge_timestamp,  # train_pos_id
-    train_net,
-    train_node2id,
-) = reindex_graph_dataset(edge_index, X, y, edge_type, edge_timestamp, train_mask)
-
-# %%
-
-
 def sample_neg(net, pos):
     def sample_neg_ts(_net, pos):
         neg = []
@@ -153,6 +139,17 @@ def sample_neg(net, pos):
     return np.concatenate(negs, axis=1)
 
 
+# %%
+(
+    train_edge_index,  # train_pos
+    train_node_feature,
+    train_node_label,
+    train_edge_type,
+    train_edge_timestamp,  # train_pos_id
+    train_net,
+    train_node2id,
+) = reindex_graph_dataset(edge_index, X, y, edge_type, edge_timestamp, train_mask)
+
 train_neg = sample_neg(train_net, train_edge_index)
 
 # outfile = TemporaryFile()
@@ -163,3 +160,25 @@ np.savez(
     train_neg=train_neg,
     train_neg_id=train_edge_timestamp,
 )
+print("Train .npz Saved!")
+
+(
+    valid_edge_index,  # valid_pos
+    valid_node_feature,
+    valid_node_label,
+    valid_edge_type,
+    valid_edge_timestamp,  # valid_pos_id
+    valid_net,
+    valid_node2id,
+) = reindex_graph_dataset(edge_index, X, y, edge_type, edge_timestamp, valid_mask)
+
+valid_neg = sample_neg(valid_net, valid_edge_index)
+np.savez(
+    "./dgraph_valid.npz",
+    valid_pos=valid_edge_index,
+    valid_pos_id=valid_edge_timestamp,
+    valid_neg=valid_neg,
+    valid_neg_id=valid_edge_timestamp,
+)
+
+print("Valid .npz Saved!")

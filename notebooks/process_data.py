@@ -12,7 +12,8 @@ window_size = 5
 
 # %%
 dgraph_data = np.load(
-    "/Users/jl102430/Documents/study/anomaly_detection/data/dynamic/DGraph/DGraphFin/dgraphfin.npz"
+    # "/Users/jl102430/Documents/study/anomaly_detection/data/dynamic/DGraph/DGraphFin/dgraphfin.npz"
+    "../../HRGCN/dataset/raw_data/dgraphfin.npz"
 )
 
 X = dgraph_data["x"]
@@ -119,7 +120,7 @@ def sample_neg(net, pos):
 
         net_copy = ssp.lil_matrix(_net).copy()
 
-        while len(neg) < pos.shape[0]:
+        while len(neg) < row.shape[0]:
             i = random.randint(0, num_node - 1)
             j = random.randint(0, num_node - 1)
 

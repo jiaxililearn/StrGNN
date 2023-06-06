@@ -114,20 +114,22 @@ def sample_neg(net, pos):
     def sample_neg_ts(_net, pos):
         neg = []
         num_node = _net.shape[0]
-        print(f"Sampling {pos.shape[0]} negative edges ..")
-        pbar = tqdm(total=100)
         row, col = _net.nonzero()
+
+        num_edges = row.shape[0]
+        print(f"Sampling {num_edges} negative edges ..")
 
         net_copy = ssp.lil_matrix(_net).copy()
 
-        while len(neg) < row.shape[0]:
+        pbar = tqdm(total=num_edges)
+        while len(neg) < num_edges:
             i = random.randint(0, num_node - 1)
             j = random.randint(0, num_node - 1)
 
             if net_copy[i, j] == 0.0:
                 neg.append([i, j])
                 net_copy[i, j] = 1.0
-                pbar.update(100 / pos.shape[0])
+                pbar.update(1)
             # print(len(neg) / pos.shape[0])
         pbar.close()
         return neg

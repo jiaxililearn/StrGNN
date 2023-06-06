@@ -102,16 +102,20 @@ def reindex_graph_dataset(
     np.save(f"./dgraph_{name}_net.npy", net)
 
     print("Sample Negatives ..")
-    train_neg = sample_neg(net, reindex_edge_index)
-    print("Save Train Data ..")
+    net_neg = sample_neg(net, reindex_edge_index)
+    print(f"Save {name} Data ..")
+
+    save_args = {
+        f"{name}_pos": reindex_edge_index,
+        f"{name}_pos_id": masked_edge_timestamp,
+        f"{name}_neg": net_neg,
+        f"{name}_neg_id": masked_edge_timestamp,
+        f"{name}_node_label": masked_node_label,
+        f"{name}_node_feature": masked_node_feature,
+    }
     np.savez(
         f"./dgraph_{name}.npz",
-        train_pos=reindex_edge_index,
-        train_pos_id=masked_edge_timestamp,
-        train_neg=train_neg,
-        train_neg_id=masked_edge_timestamp,
-        train_node_label=masked_node_label,
-        train_node_feature=masked_node_feature,
+        **save_args
     )
     print(f"Complete Processing {name}!")
 

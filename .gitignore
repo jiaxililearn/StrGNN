@@ -4,3 +4,9 @@ pytorch_DGCNN/__pycache__/*
 pytorch_DGCNN/lib/__pycache__/*
 detection/__pycache__/*
 notebooks/*.npz
+data/dgraph_test_net.npy
+data/dgraph_test.npz
+data/dgraph_train_net.npy
+data/dgraph_train.npz
+data/dgraph_valid_net.npy
+data/dgraph_valid.npz

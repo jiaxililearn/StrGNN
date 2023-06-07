@@ -12,3 +12,4 @@ pip install --user networkx
 pip install --user tqdm
 pip install --user scikit-learn
 pip install --user gensim
+pip install --user node2vec

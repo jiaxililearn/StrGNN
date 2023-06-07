@@ -48,6 +48,9 @@ class DGCNN(nn.Module):
 
 
         #self.conv1d_params3 = nn.Conv1d(self.dense_dim, self.dense_dim, window, window)
+        print(f"dense_dim: {dense_dim}")
+        print(f"self.dense_dim: {self.dense_dim}")
+        print(f"conv1d_kws: {conv1d_kws}")
         self.conv1d_params3 = nn.Conv1d(32, self.dense_dim, (dense_dim - conv1d_kws[1] + 1), (dense_dim - conv1d_kws[1] + 1))
         #self.conv1d_params4 = nn.Conv1d(self.dense_dim, self.dense_dim, window, window)
         self.lstm = nn.GRU(self.dense_dim, 256, batch_first=True)
